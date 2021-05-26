@@ -1,0 +1,41 @@
+#!/bin/sh
+# Last updated 2016.12.14
+PROGCMD=$(basename "$0")
+die_() { echo "$PROGCMD: $1" 1>&2; exit $2; }
+die() { [ -f "$outfile" ] && rm -f "$outfile"; die_ "$@"; }
+
+if (for i in "$@"; do
+    printf "%s" "$i" | grep -E '^(-h|-help|--help)$' && exit 0
+    done; exit 1) >/dev/null || [ $# -eq 0 ]; then
+  echo "Usage: $PROGCMD [ARGS...]
+Run \`diff -u ARGS' and view its output using the program indicated by
+environment variable \$DIFF_VIEWER.  Default to \`vim' or \`vi' if
+\$DIFF_VIEWER is not set." 1>&2
+  exit 2
+fi
+
+# If stdout isn't a terminal then just run diff raw.
+tty -s <&1 || exec diff -u "$@"
+
+# Set default viewer if none was specified.
+for i in "$DIFF_VIEWER" vim vi; do
+  if (which "$(echo "$i" | sed 's,[ \t].*,,')" >/dev/null 2>&1); then
+    viewer="$i"
+    break
+  fi
+done
+[ -n "$viewer" ] || die_ "\$DIFF_VIEWER not found; try \`$PROGCMD --help'" 2
+
+# Run diff, write its output to a temp file, then run the viewer.
+outfile=$(mktemp "/tmp/${PROGCMD}-XXXXXX.diff" 2>&1)
+[ $? -eq 0 ] || die_ "could not create temporary file: $outfile" 2
+diffout=$(diff -u "$@" 2>&1)
+status=$?
+[ $status -eq 0 ] || [ $status -eq 1 ] || die "$diffout" $status
+printf "%s" "$diffout" > "$outfile" || die "could not write to $outfile" 2
+chmod 400 "$outfile"
+
+# Don't quote $viewer b/c it will break if, for example, viewer="emacs -nw".
+$viewer "$outfile"
+rm -f "$outfile"
+exit $status

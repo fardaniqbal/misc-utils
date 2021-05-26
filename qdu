@@ -1,0 +1,61 @@
+#!/bin/sh
+
+usage='Usage: '`basename "$0"`' [DIR]
+Lists all files in DIR sorted by file size in ascending order.  Uses
+current directory if DIR is unspecified.'
+
+for arg in "$@"; do
+    case "$arg" in
+    --help) echo "$usage"
+            exit
+            ;;
+    *)
+            ;;
+    esac
+done
+
+if [ $# -eq 0 ]; then
+    dir="."
+else
+    dir="$1"
+fi
+
+# Escape special characters in $dir so that it can be treated as a literal when
+# used in a sed filter.
+dir_esc=`echo "$dir" | sed 's#\(\[\|\]\|[.^$|\#*\\]\)#\\\\\1#g'`
+
+# Sed filter to remove leading "$dir/" from file names.
+filter='s#^\([0-9]*\(\.[0-9]*\)\?[a-zA-Z]*[[:space:]]\+\)'"$dir_esc"'/*#\1#'
+
+du -ab --max-depth 1 -- "$dir" | sort -n | sed "$filter" | awk '
+{
+    # make file size human readable (e.g. "10.4M")
+    unit = 1024
+    rdx = 1024 #1000
+    sz = $1
+
+    for (r = 1; sz/unit >= rdx; r++) {
+        sz /= rdx
+    }
+    for (; sz >= unit; r++) {
+        sf = sz % unit * 100/unit
+        sz /= unit
+    }
+
+    # if sf/10 rounds up to 10, then let sf overflow into sz
+    if (sf/10 + (sf%10 >= 5) < 10) {
+        sf = sf/10 + (sf%10 >= 5)
+    } else {
+        sf = 0
+        sz++
+    }
+    suf = substr (" KMGTPE", r, 1)
+
+    # if less than 1K or if integral part has 2 or more digits
+    if (r == 1 || sz >= 10) {
+        str = sprintf ("%d%s", sz + (sf >= 5), suf)
+    } else {
+        str = sprintf ("%d.%d%s", sz, sf, suf)
+    }
+    printf ("%-7s %s\n", str, $2)
+}'
