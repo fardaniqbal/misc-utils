@@ -31,31 +31,31 @@ du -B1 --max-depth 1 -- "$dir" | sort -n | sed "$filter" | awk '
 {
     # make file size human readable (e.g. "10.4M")
     unit = 1024
-    rdx = 1024 #1000
-    sz = $1
+    radix = 1024 #1000
+    size = $1
 
-    for (r = 1; sz/unit >= rdx; r++) {
-        sz /= rdx
+    for (unit_idx = 1; size/unit >= radix; unit_idx++) {
+        size /= radix
     }
-    for (; sz >= unit; r++) {
-        sf = sz % unit * 100/unit
-        sz /= unit
+    for (; size >= unit; unit_idx++) {
+        frac = size % unit * 100/unit
+        size /= unit
     }
 
-    # if sf/10 rounds up to 10, then let sf overflow into sz
-    if (sf/10 + (sf%10 >= 5) < 10) {
-        sf = sf/10 + (sf%10 >= 5)
+    # if frac/10 rounds up to 10, then let frac overflow into size
+    if (frac/10 + (frac%10 >= 5) < 10) {
+        frac = frac/10 + (frac%10 >= 5)
     } else {
-        sf = 0
-        sz++
+        frac = 0
+        size++
     }
-    suf = substr (" KMGTPE", r, 1)
+    suf = substr (" KMGTPE", unit_idx, 1)
 
     # if less than 1K or if integral part has 2 or more digits
-    if (r == 1 || sz >= 10) {
-        str = sprintf ("%d%s", sz + (sf >= 5), suf)
+    if (unit_idx == 1 || size >= 10) {
+        str = sprintf ("%d%s", size + (frac >= 5), suf)
     } else {
-        str = sprintf ("%d.%d%s", sz, sf, suf)
+        str = sprintf ("%d.%d%s", size, frac, suf)
     }
     printf ("%-7s %s\n", str, $2)
 }'
