@@ -20,14 +20,7 @@ else
     dir="$1"
 fi
 
-# Escape special characters in $dir so that it can be treated as a literal when
-# used in a sed filter.
-dir_esc=`echo "$dir" | sed 's#\(\[\|\]\|[.^$|\#*\\]\)#\\\\\1#g'`
-
-# Sed filter to remove leading "$dir/" from file names.
-filter='s#^\([0-9]*\(\.[0-9]*\)\?[a-zA-Z]*[[:space:]]\+\)'"$dir_esc"'/*#\1#'
-
-du -B1 --max-depth 1 -- "$dir" | sort -n | sed "$filter" | awk '
+du -B1 --max-depth 1 -- "$dir" | sort -n | awk '
 {
     # make file size human readable (e.g. "10.4M")
     unit = 1024
