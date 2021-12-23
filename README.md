@@ -12,3 +12,5 @@ just convenience wrappers around common Unix utilities.
   for colored syntax hilighting.
 * `qdu` - like recursive `du`, but lists just the immediate children of the
   given directory next to their respective sizes.
+* `sync-dotfiles.sh` - keep your local dotfile repos up-to-date with their
+  remotes on GitHub.
