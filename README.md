@@ -1,5 +1,5 @@
-Miscellaneous command line utilities I find myself using frequently.  Mostly
-just convenience wrappers around common Unix utilities.
+Miscellaneous command line utilities I find myself using frequently.
+Mostly just convenience wrappers around common Unix utilities.
 
 * `svn-diff.sh` - like `svn diff`, but opens its output in a user-specified
   viewer (vim by default.)
