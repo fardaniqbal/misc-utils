@@ -13,6 +13,7 @@ $stdout_is_tty && txtred=$(tput setaf 1)    || txtred=
 $stdout_is_tty && txtgrn=$(tput setaf 2)    || txtgrn=
 $stdout_is_tty && txtemph=$(tput setaf 13)  || txtemph=
 $stdout_is_tty && txtrst=$(tput sgr0)       || txtrst=
+$stdout_is_tty && gitcolor='-c color.ui=always' || gitcolor=
 die() { printf "\n$txtred%s: %s$txtrst\n" "$self" "$*" 1>&2; exit 1; }
 
 # Try to be helpful if we find bad command line args.
@@ -38,7 +39,7 @@ sync_repo() {
     return 1
   fi
   # Otherwise attempt to update.
-  git_output=$(git pull --recurse-submodules=on-demand 2>&1)
+  git_output=$(git $gitcolor pull --recurse-submodules=on-demand 2>&1)
   return_code=$?
   if [ $return_code -ne 0 ]; then
     printf "[${txtred}FAIL${txtrst}]${txtred}\n"
