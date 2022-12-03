@@ -40,7 +40,7 @@ sync_repo() {
   fi
   # Otherwise attempt to update.
   git_output=$(git $gitcolor pull --recurse-submodules=on-demand 2>&1 &&
-               git $gitcolor submodule sync --recursive 2>&1 &&
+               git $gitcolor submodule sync --recursive 2>&1 >/dev/null &&
                git $gitcolor submodule update --init --recursive 2>&1)
   return_code=$?
   if [ $return_code -ne 0 ]; then
