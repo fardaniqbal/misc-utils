@@ -14,3 +14,4 @@ Mostly just convenience wrappers around common Unix utilities.
   given directory next to their respective sizes.
 * `sync-dotfiles.sh` - keep your local dotfile repos up-to-date with their
   remotes on GitHub.
+* `termcolors.sh` - print a table of terminal color codes.
