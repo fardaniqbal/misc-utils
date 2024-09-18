@@ -33,7 +33,9 @@ sync_repo() {
   # Error out if this repo has uncommitted changes or is ahead of remote.
   repo_status=$(git status --porcelain -b 2>&1)
   if [ "$(echo "$repo_status" | wc -l)" -ne 1 ] ||
-     [ -n "$(echo "$repo_status" | grep -E '\[ahead\s+\d+\]')" ]; then
+     [ -n "$(echo "$repo_status" | grep '\[ahead[ \t][ \t]*[0-9][0-9]*\]')" ]
+     # used to be just `grep -E '\[ahead\s+\d+\]'` but that breaks on SunOS
+  then
     printf "[${txtred}FAIL${txtrst}]\n"
     printf "  ${txtred}%s has local changes${txtrst}\n" "$repo"
     return 1
