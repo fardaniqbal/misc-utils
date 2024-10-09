@@ -18,3 +18,6 @@ Mostly just convenience wrappers around common Unix utilities.
 * `sync-dotfiles.sh` - keep your local dotfile repos up-to-date with their
   remotes on GitHub.
 * `termcolors.sh` - print a table of terminal color codes.
+* `vim-git-bash.cmd` - double-click files in Windows's GUI to open them in
+  Git Bash's Vim.  Trivially modifiable to run any other Git Bash program
+  (nvim, etc) as a handler for double-clicked files.
