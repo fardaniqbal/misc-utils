@@ -6,9 +6,8 @@
 cd "$(dirname "$0")"
 self=$(basename "$0")
 
-# Colorize output if stdout is a terminal.  NB: the '-s' flag to 'tty' is
-# deprecated, so just redirect its output to /dev/null instead.
-tty <&1 >/dev/null && stdout_is_tty=true || stdout_is_tty=false
+# Colorize output if stdout/stderr is a terminal.
+[ -t 1 ] && [ -t 2 ] && stdout_is_tty=true || stdout_is_tty=false
 $stdout_is_tty && txtred=$(tput setaf 1)    || txtred=
 $stdout_is_tty && txtgrn=$(tput setaf 2)    || txtgrn=
 $stdout_is_tty && txtemph=$(tput setaf 13)  || txtemph=
