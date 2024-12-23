@@ -8,10 +8,10 @@ self=$(basename "$0")
 
 # Colorize output if stdout/stderr is a terminal.
 [ -t 1 ] && [ -t 2 ] && stdout_is_tty=true || stdout_is_tty=false
-$stdout_is_tty && txtred=$(tput setaf 1)    || txtred=
-$stdout_is_tty && txtgrn=$(tput setaf 2)    || txtgrn=
-$stdout_is_tty && txtemph=$(tput setaf 13)  || txtemph=
-$stdout_is_tty && txtrst=$(tput sgr0)       || txtrst=
+$stdout_is_tty && txtred="$(echo  -e '\033[01;31m')"  || txtred=
+$stdout_is_tty && txtgrn="$(echo  -e '\033[01;32m')"  || txtgrn=
+$stdout_is_tty && txtemph="$(echo -e '\033[01;35m')"  || txtemph=
+$stdout_is_tty && txtrst="$(echo  -e '\033[00m')"     || txtrst=
 $stdout_is_tty && gitcolor='-c color.ui=always' || gitcolor=
 die() { printf "\n$txtred%s: %s$txtrst\n" "$self" "$*"; exit 1; }
 
