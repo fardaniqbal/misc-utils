@@ -6,6 +6,10 @@
 cd "$(dirname "$0")"
 self=$(basename "$0")
 
+# Whether to run `git pull` on submodules (1 level deep only).  TODO: allow
+# overriding this with a command line option.
+pull_submodules=false
+
 # Colorize output if stdout/stderr is a terminal.
 [ -t 1 ] && [ -t 2 ] && stdout_is_tty=true || stdout_is_tty=false
 $stdout_is_tty && txtred="$(printf  '\033[01;31m')"  || txtred=
@@ -43,6 +47,7 @@ sync_repo() {
   git_output=$(git $gitcolor pull --recurse-submodules=on-demand 2>&1 &&
                git $gitcolor submodule sync --recursive 2>&1 >/dev/null &&
                git $gitcolor submodule update --init --recursive 2>&1 &&
+               ! $pull_submodules ||
                git $gitcolor submodule foreach 'git pull' 2>&1)
   return_code=$?
   if [ $return_code -ne 0 ]; then
