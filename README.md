@@ -4,6 +4,7 @@ Mostly just convenience wrappers around common Unix utilities.
 * `kill-office.sh` - kill all currently-running LibreOffice processes (yes,
   I wrote this _specifically_ for LibreOffice because it freezes _that_
   frequently on Mac OS.)
+* `lscron.sh` - list all cron jobs for all users on the system.
 * `svn-diff.sh` - like `svn diff`, but opens its output in a user-specified
   viewer (vim by default.)
 * `svn-info.sh` - like `svn info`, but you can specify a path on the local
