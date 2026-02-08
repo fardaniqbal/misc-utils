@@ -23,11 +23,13 @@ EOF
 while [ $# -gt 0 ]; do
   arg="$2"
   shift_arg='shift'
-  if [ $(expr "$1" : '^[^=]\+=.*$') -gt 0 ]; then
+  if [ $(expr -- "$1" : '^[^=]\+=.*$') -gt 0 ]; then
     arg="${1#*=}"
     shift_arg=''
   fi
   case "$1" in
+    -) break
+      ;;
     --) shift; break
       ;;
     --verbose)
@@ -37,15 +39,20 @@ while [ $# -gt 0 ]; do
       show_help
       exit 2
       ;;
+    -*)
+      printf '%s: unknown option %s.\n' "$self" "$1" >&2
+      printf 'Run with --help for usage info.\n' >&2
+      exit 2
+      ;;
     *) break
       ;;
   esac
   shift
 done
 
-if [ $# -eq 0 ]; then
+if [ $# -ne 1 ]; then
   cat >&2 <<EOF
-Missing HOST[:PORT] argument.
+Must specify exactly one HOST[:PORT] argument.
 Run \`$self --help\` for more info.
 EOF
   exit 2
