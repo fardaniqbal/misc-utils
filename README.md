@@ -17,6 +17,8 @@ Mostly just convenience wrappers around common Unix utilities.
   for colored syntax hilighting.
 * `qdu` - like recursive `du`, but lists just the immediate children of the
   given directory next to their respective sizes.
+* `rmspc.sh` - replace spaces with dashes in all filenames under the
+  directories given on the command line, recursing into each directory.
 * `sync-dotfiles.sh` - keep your local dotfile repos up-to-date with their
   remotes on GitHub.
 * `termcolors.sh` - print a table of terminal color codes.
