@@ -70,14 +70,18 @@ if $verbose; then
   printf 'port="%s"\n' "$port" >&2
 fi
 
+tmpfile="$(mktemp -t "$(basename "$0").XXXXXX")" || exit 1
+trap "rm -f \"$tmpfile\"" 0 1 2 3 15
+
 # Run openssl s_client to get certificate info.
 openssl_output="$(
   echo | \
-  openssl s_client -showcerts -servername "$host" -connect "$host:$port" 2>/dev/null
+  openssl s_client -showcerts -servername "$host" -connect "$host:$port" 2>"$tmpfile"
 )"
 status=$?
 if [ $status -ne 0 ]; then
-  printf 'openssl failed with status %d.\n' $status
+  (printf 'ERROR:\n'; sed 's|^|    |' <"$tmpfile"
+   printf 'openssl failed with status %d.\n' $status) >&2
   exit $status
 fi
 
