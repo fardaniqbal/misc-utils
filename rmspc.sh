@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # Replace spaces with dashes in all filenames under the directories given
 # on the command line, recursing into each directory.
+#
+# TODO:
+# - Add `--help` documentation.
+# - Update symlinks that point to filenames with spaces.
+# - MAYBE: add sed-style `-e s/REGEX/REPLACEMENT/` option to make this a
+#   generic mass recursive file-renaming tool.
+# - Add `--verbose` option to print every `mv` command before executing it.
+# - Add `--dry-run` option.
 
 for topdir in "$@"; do
   # Be careful about the order in which we rename things.  Must rename the
