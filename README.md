@@ -25,3 +25,6 @@ Mostly just convenience wrappers around common Unix utilities.
 * `vim-git-bash.cmd` - double-click files in Windows's GUI to open them in
   Git Bash's Vim.  Trivially modifiable to run any other Git Bash program
   (nvim, etc) as a handler for double-clicked files.
+* `wsudo.cmd` - run Windows programs with elevated privileges.  A bit janky
+  at the moment.  (TODO: make this run the given program/command in the
+  same terminal window rather than opening a new one, like UNIX `sudo`.)
