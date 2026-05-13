@@ -1,6 +1,7 @@
 Miscellaneous command line utilities I find myself using frequently.
 Mostly just convenience wrappers around common Unix utilities.
 
+* `check-logins.sh` - test SSH logins into hosts listed in ~/.ssh/config.
 * `get-ssl-cert.sh` - get a given server's SSL certificates.
 * `kill-office.sh` - kill all currently-running LibreOffice processes (yes,
   I wrote this _specifically_ for LibreOffice because it freezes _that_
