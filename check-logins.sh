@@ -81,7 +81,7 @@ for i in $(seq 0 $((${#ssh_hosts[@]} - 1))); do
   total_count=$(($total_count + 1))
   host_ui="${ssh_hosts[$i]}"
   [ -n "${ssh_aliases[$i]}" ] &&
-    host_ui="$host_ui ($(tr ' ' / <<< "${ssh_aliases[$i]}"))"
+    host_ui="$host_ui ($(sed 's, , / ,g' <<< "${ssh_aliases[$i]}"))"
   printf '%s\n' "------- checking $host_ui -------"
   out="$(echo 'exit 0' |
     ssh -T -oBatchMode=yes -oConnectTimeout=10 "${ssh_hosts[$i]}" 2>&1)"
