@@ -76,15 +76,15 @@ fail_count=0
 
 # SSH into each host and track which ones fail.
 for i in $(seq 0 $((${#ssh_hosts[@]} - 1))); do
-  [[ "${ssh_hosts[$i]}" == *'*'* ]] && continue # skip hosts with wildcards
+  [[ "${ssh_hosts[$i]}" == *[*?]* ]] && continue # skip host with wildcards
 
   total_count=$(($total_count + 1))
   host_ui="${ssh_hosts[$i]}"
   [ -n "${ssh_aliases[$i]}" ] &&
     host_ui="$host_ui ($(sed 's, , / ,g' <<< "${ssh_aliases[$i]}"))"
   printf '%s\n' "------- checking $host_ui -------"
-  out="$(echo 'exit 0' |
-    ssh -T -oBatchMode=yes -oConnectTimeout=10 "${ssh_hosts[$i]}" 2>&1)"
+  out="$(ssh -T -oBatchMode=yes -oConnectTimeout=10 -oLogLevel=ERROR \
+    "${ssh_hosts[$i]}" 2>&1 <<< "exit 0")"
   if [ $? -eq 0 ]; then
     printf '%s: OK\n' "$host_ui"
   else
