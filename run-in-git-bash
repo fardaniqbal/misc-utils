@@ -32,7 +32,7 @@
 # !!! On WSL, this may ask for sudo password to enable .exe interop !!!
 #
 # Latest version of this is on https://github.com/fardaniqbal/misc-utils/.
-_RIGB_VERSION_='1.0.0'
+_RIGB_VERSION_='0.1.0'
 _rigb_self_="$(basename -- "${BASH_SOURCE[0]}")"
 _rigb_verbose_="${RIGB_VERBOSE:-1}"
 
@@ -47,7 +47,6 @@ show_help() {
   p==1 && ! /^[ \t]*#/ {exit 0}
   p==1 {print $0}' | sed 's|^# \?||'
 }
-[ $# -gt 0 ] || (show_help; false) || exit 2
 
 # Get comand-line options.
 while [ $# -gt 0 ]; do
