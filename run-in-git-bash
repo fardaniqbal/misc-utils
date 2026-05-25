@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+# Usage: run-in-git-bash [OPTIONS...] [--] COMMAND [ARGS...]
+# Run the given COMMAND using locally installed Git Bash.  That is:
+#
+# 1.  If you run this in WSL, it will run the COMMAND in the host Windows'
+#     Git Bash _if Git Bash is installed_.  If not installed, error exit.
+# 2.  If you run this in a Windows Bash installation that _is not_ Git Bash
+#     (e.g., Cygwin, MSYS2), it will run the COMMAND in Git Bash _if Git
+#     Bash is installed_.  If not installed, error exit.
+# 3.  If this is already running in Git Bash, run the COMMAND as-is.
+#
+# This behaves differently when run on a NON-Windows platform (Linux, Mac
+# OS, etc.)  If you run this on a NON-Windows platform, then it's assumed
+# COMMAND is safe to run as-is, so just run it as-is.
+#
+# EXAMPLE: let's say you want to make sure your script runs in Git Bash
+# when on Windows, or the regular system Bash when NOT on Windows.  You can
+# do this by starting your script like this:
+#
+#     #!/usr/bin/env bash
+#     . "$(cd "$(dirname -- "$0")"; pwd)/run-in-git-bash" "$0" "$@"
+#     ...rest of your script...
+#
+# OPTIONS
+#   -V, --version
+#     Show version number and exit.
+#   -v, --verbose
+#     Verbose output.  Specify multiple times to increase verbosity.
+#   -h, --help
+#     Show this message and exit.
+#
+# !!! On WSL, this may ask for sudo password to enable .exe interop !!!
+#
+# Latest version of this is on https://github.com/fardaniqbal/misc-utils/.
+_RIGB_VERSION_='1.0.0'
+_rigb_self_="$(basename -- "${BASH_SOURCE[0]}")"
+_rigb_verbose_="${RIGB_VERBOSE:-1}"
+
+# Special case for scripts that want to run themselves in Git Bash.
+[ ${#BASH_SOURCE[@]} -gt 1 ] && [ -n "$_RIGB_RECURSIVE_" ] && return 127
+export _RIGB_RECURSIVE_=true
+
+# Show the header command as the help text.
+show_help() {
+  tail -n+2 -- "${BASH_SOURCE[0]}" | awk $'BEGIN {p=0}
+  p==0 && /^[ \t]*#+.*[^ \t]/ {p=1}
+  p==1 && ! /^[ \t]*#/ {exit 0}
+  p==1 {print $0}' | sed 's|^# \?||'
+}
+[ $# -gt 0 ] || (show_help; false) || exit 2
+
+# Get comand-line options.
+while [ $# -gt 0 ]; do
+  arg="$2"
+  shift_arg='shift'
+  if [ $(expr -- "$1" : '^[^=]\+=.*$') -gt 0 ]; then
+    arg="${1#*=}"
+    shift_arg=''
+  fi
+  case "$1" in
+    -)  break;;
+    --) shift; break;;
+    -v|-vv|-vvv|-vvvv|-vvvvv|--verbose)
+      [ $(expr -- "$1" : '^-v.*$') -gt 0 ] &&
+        _rigb_verbose_=$(($_rigb_verbose_ + ${#1} - 1)) ||
+        _rigb_verbose_=$(($_rigb_verbose_ + 1))
+      ;;
+    -V|--version)
+      printf '%s\n' "$_rigb_self_ $_RIGB_VERSION_"; exit 0;;
+    -h|--help)
+      show_help; exit 0;;
+    -*)
+      printf '%s: unknown option %s.\n' "$_rigb_self_" "$1" >&2
+      printf 'Run with --help for usage info.\n' >&2
+      exit 2
+      ;;
+    *) break;;
+  esac
+  shift
+done
+
+if [ $# -eq 0 ]; then
+  printf 'Missing arguments.\n' >&2
+  printf 'Run `%s --help` for more info.\n' "$_rigb_self_" >&2
+  exit 2
+fi
+
+dbg() {
+  local status=$?
+  [ $_rigb_verbose_ -ge 2 ] || return $status
+  (printf '%s: ' "$_rigb_self_"; printf "$@"; printf '\n') >&2
+  return $status
+}
+warning() {
+  local status=$?
+  [ $_rigb_verbose_ -ge 1 ] || return $status
+  (printf '%s: WARNING: ' "$_rigb_self_"; printf "$@"; printf '\n') >&2
+  return $status
+}
+error() {
+  local status=$?
+  (printf '%s: ERROR: ' "$_rigb_self_"; printf "$@"; printf '\n') >&2
+  [ $status -eq 0 ] && exit 1 || exit $status
+}
+
+# Check for WSL, MinGW, Cygwin, etc.
+wsl=false
+mingw=false
+cygwin=false
+
+# Assume WSL if `uname -r` contains "Microsoft".
+uname -r | grep -qi 'microsoft' && wsl=true
+! $wsl && uname -s | grep -qi 'mingw\|msys' && mingw=true
+! $wsl && ! $mingw && uname -s | grep -qi 'cygwin' && cygwin=true
+
+# If NOT on Windows or WSL, run the given command as-is.
+if ! $wsl && ! command -v cmd.exe >/dev/null; then
+  dbg 'not on Windows; executing args...'
+  exec "$@"
+  exit $?
+fi
+
+# Convert to/from Windows-style and Unix-style paths.
+if $wsl; then
+  unixpath() { wslpath -u "$1"; }
+  winpath()  { wslpath -w "$1"; }
+elif $mingw || $cygwin; then
+  unixpath() { cygpath -u "$1"; }
+  winpath()  { cygpath -wl "$1"; }
+else
+  unixpath() { printf '%s\n' "$1"; }
+  winpath()  { printf '%s\n' "$1"; }
+fi
+
+# Make sure Windows .exe interop is enabled.
+if $wsl && ! cmd.exe /k exit 0 2>/dev/null; then
+  dbg "Enabling Windows .exe interop.  May need WSL 'sudo' password..."
+  if ! grep -qsF ':WSLInterop:M::MZ::/init:PF' /usr/lib/binfmt.d/WSLInterop.conf; then
+    sudo sh -c 'echo :WSLInterop:M::MZ::/init:PF >> /usr/lib/binfmt.d/WSLInterop.conf' ||
+    error 'failed to enable Windows .exe interop.'
+  fi
+  sudo systemctl restart systemd-binfmt &&
+  (dbg 'Successfully enabled Windows .exe interop.'; true) ||
+  error 'failed to enable Windows .exe interop.'
+fi
+
+# Get install path of Git Bash.
+dbg "Obtaining Git Bash install dir from Windows registry..."
+git_bash_dir="$(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+  '(Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\GitForWindows).InstallPath')" ||
+error 'Git Bash not installed on host Windows?'
+git_bash_dir="$(tr -d $'\r' <<< "$git_bash_dir" | sed 's,\\\\*,\\,g')"
+git_bash="$git_bash_dir\\usr\\bin\\bash"
+
+# Are we already running inside Git Bash and being sourced?
+winpath_shell="$(winpath "${SHELL}")"
+if [ "$(tr [A-Z] [a-z] <<< "${winpath_shell%.exe}")" = \
+     "$(tr [A-Z] [a-z] <<< "${git_bash%.exe}")" ] &&
+   [ ${#BASH_SOURCE[@]} -gt 1 ]; then
+  dbg 'Git Bash is %s.' "'$git_bash'"
+  dbg 'already in git bash; returning to script...'
+  return 127
+fi
+
+git_bash_dir="$(unixpath "$git_bash_dir")"
+git_bash_dir="$(cd "$git_bash_dir" && pwd)" || exit 1
+git_bash="$(sed 's,//*,/,g' <<< "$git_bash_dir/usr/bin/bash.exe")"
+dbg 'Git Bash is %s.' "'$git_bash'"
+[ -e "$git_bash" ] || error '!!! BUG !!!'
+
+# Copy self to a Windows-accessible location and run in Git Bash.
+TMPDIR="$(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+  "(Get-Item -LiteralPath \"\$env:TEMP\").FullName")" &&
+export TMPDIR="$(unixpath "$(printf '%s' "$TMPDIR" | tr -d $'\r')")" &&
+tmp_dir="$(mktemp -d -t "$(basename "$0").XXXXXX")" || exit $?
+trap 'rm -rf "$tmp_dir"' 0 1 2 3 15
+script_copy="$tmp_dir/$(basename "$1")"
+cp "$1" "$script_copy" &&
+cp "$_rigb_self_" "$tmp_dir/" ||
+error 'CANNOT COPY %s' "'$_rigb_self_'"
+
+# DO NOT `exec` Git Bash - that prevents our cleanup trap from running.
+dbg 're-executing executing in git bash...'
+shift
+"$git_bash" -l -c 'exec "$(cygpath -u "'"$(winpath "$script_copy")"'")"' "$@"
+exit $?  # need `exit` here in case we were sourced

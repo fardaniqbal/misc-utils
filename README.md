@@ -21,6 +21,8 @@ Mostly just convenience wrappers around common Unix utilities.
   given directory next to their respective sizes.
 * `rmspc.sh` - replace spaces with dashes in all filenames under the
   directories given on the command line, recursing into each directory.
+* `run-in-bit-bash.sh` - automatically run scripts in Git Bash, even if
+  invoking from WSL or another Windows Bash setup (MSYS2, Cygwin, etc.)
 * `sync-dotfiles.sh` - keep your local dotfile repos up-to-date with their
   remotes on GitHub.
 * `termcolors.sh` - print a table of terminal color codes.
