@@ -2,11 +2,6 @@
 # conversions explicitly on a per-file-extension basis.
 * -text
 
-# Explicitly declare text files you want to always be normalized and converted
-# to native line endings on checkout.
-.gitattributes text=auto
-.gitignore text=auto
-
 # Declare files that will always have CRLF or LF line endings on checkout.
 *.sln text eol=crlf
 *.bat text eol=crlf
@@ -14,6 +9,9 @@
 *.ps1 text eol=crlf
 *.bash text eol=lf
 *.sh text eol=lf
+*.ksh text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
 *.csh text eol=lf
 *.md text eol=lf
 *.txt text eol=lf
@@ -32,6 +30,7 @@ makefile text eol=lf
 *.cxx text eol=lf
 *.hpp text eol=lf
 *.hxx text eol=lf
+*.cs text eol=lf
 *.java text eol=lf
 *.jsf text eol=lf
 *.jsp text eol=lf
@@ -42,6 +41,12 @@ makefile text eol=lf
 *.lua text eol=lf
 *.py text eol=lf
 *.pl text eol=lf
+*.htm text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
 
 # Denote all files that are truly binary and should not be modified.
 *.a binary
@@ -51,35 +56,36 @@ makefile text eol=lf
 *.dylib binary
 *.exe binary
 
-*.7z binary
-*.bz binary
-*.bz2 binary
-*.cab binary
-*.deb binary
-*.ear binary
-*.gz binary
-*.jar binary
-*.rar binary
-*.rpm binary
-*.t7z binary
-*.tar binary
-*.taz binary
-*.tbz binary
-*.tbz2 binary
-*.txz binary
-*.tz binary
-*.tgz binary
-*.war binary
-*.xz binary
-*.Z binary
-*.z binary
-*.zip binary
+*.7z filter=lfs diff=lfs merge=lfs -text
+*.bz filter=lfs diff=lfs merge=lfs -text
+*.bz2 filter=lfs diff=lfs merge=lfs -text
+*.cab filter=lfs diff=lfs merge=lfs -text
+*.deb filter=lfs diff=lfs merge=lfs -text
+*.ear filter=lfs diff=lfs merge=lfs -text
+*.gz filter=lfs diff=lfs merge=lfs -text
+*.jar filter=lfs diff=lfs merge=lfs -text
+*.rar filter=lfs diff=lfs merge=lfs -text
+*.rpm filter=lfs diff=lfs merge=lfs -text
+*.t7z filter=lfs diff=lfs merge=lfs -text
+*.tar filter=lfs diff=lfs merge=lfs -text
+*.taz filter=lfs diff=lfs merge=lfs -text
+*.tbz filter=lfs diff=lfs merge=lfs -text
+*.tbz2 filter=lfs diff=lfs merge=lfs -text
+*.txz filter=lfs diff=lfs merge=lfs -text
+*.tz filter=lfs diff=lfs merge=lfs -text
+*.tgz filter=lfs diff=lfs merge=lfs -text
+*.war filter=lfs diff=lfs merge=lfs -text
+*.xz filter=lfs diff=lfs merge=lfs -text
+*.Z filter=lfs diff=lfs merge=lfs -text
+*.z filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
 
 *.gif binary
 *.png binary
 *.jpg binary
 *.jpeg binary
-*.pdf binary
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
 *.doc binary
 *.docx binary
 *.ppt binary
