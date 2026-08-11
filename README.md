@@ -5,6 +5,7 @@ Mostly just convenience wrappers around common Unix utilities.
 * `get-ssl-cert.sh` - get a given server's SSL certificates.
 * `get-zscaler-root-ca.ps1` - get Zscaler Root CA from Windows' trusted
   root store.  No Administrator privileges required.
+* `get-zscaler-root-ca.sh` - same as above, but for Git Bash/WSL.
 * `kill-office.sh` - kill all currently-running LibreOffice processes (yes,
   I wrote this _specifically_ for LibreOffice because it freezes _that_
   frequently on Mac OS.)
