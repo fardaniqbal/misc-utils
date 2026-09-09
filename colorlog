@@ -22,7 +22,7 @@ This is primarily intended for typical Java-format logs (log4j, etc), but
 will likely work on other similarly-formatted logs too.
 
 EXAMPLES:
-- Tail tomcat logs with pizzazz:
+- Tail Tomcat logs with pizzazz:
       tail -f catalina.out | colorlog
 - Same, but extra highlights for stack frames from \`com.mycompany\`:
       tail -f catalina.out | colorlog -s 'com\\.mycompany'
