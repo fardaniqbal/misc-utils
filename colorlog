@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+# Filter logs through a color highlighter.  Mostly intended for typical
+# Java-format logs (log4j, etc), but probably works on other logs too.
+#
+# Get the latest version at https://github.com/fardaniqbal/misc-utils/.
+set -uo pipefail
+COLORLOG_VERSION="0.0.1"
+self="$(basename "$0")"
+
+# Effectively don't match any stack frame by default.
+COLORLOG_HL_STACK_FRAME="${COLORLOG_HL_STACK_FRAME:-^$}"
+
+help() {
+  cat <<EOF
+Usage: $self [OPTIONS] [FILE]
+
+Colorize logs read from FILE (if given) or standard input (if FILE is not
+given and standard input is not a terminal.)  If FILE is \`-\`, then read
+from standard input even if it's a terminal.
+
+This is primarily intended for typical Java-format logs (log4j, etc), but
+will likely work on other similarly-formatted logs too.
+
+EXAMPLES:
+- Tail tomcat logs with pizzazz:
+      tail -f catalina.out | colorlog
+- Same, but extra highlights for stack frames from \`com.mycompany\`:
+      tail -f catalina.out | colorlog -s 'com\\.mycompany'
+
+OPTIONS:
+-h, --help
+  Show this message and exit.
+-s, --hl-stack-frame=REGEX
+  For stack traces, highlight stack trace lines matching REGEX.  Overrides
+  COLORLOG_HL_STACK_FRAME environment variable.
+-V, --version
+  Show version number and exit.
+
+ENVIRONMENT VARIABLES:
+- COLORLOG_HL_STACK_FRAME: highlight stack trace lines matching the regex
+    specified by this variable.  Overridden by -s/--hl-stack-frame.
+
+Get the latest version at https://github.com/fardaniqbal/misc-utils/.
+EOF
+}
+
+# Scan command line options/args.
+while [ $# -gt 0 ]; do
+  opt="${1%%=*}"
+  optarg="${1#*=}"
+  shiftarg=''
+  if [ "$opt" = "$1" ]; then
+    optarg="${2:-}"
+    shiftarg=shift
+  fi
+  case "$opt" in
+    -h|--help) help; exit 0;;
+    -s|--hl-stack-frame)
+      COLORLOG_HL_STACK_FRAME="$optarg"
+      $shiftarg;;
+    -V|--version)
+      printf 'colorlog %s\n' "$COLORLOG_VERSION"
+      exit 0;;
+    -) break;;
+    --) shift; break;;
+    -*)
+      printf 'ERROR: unrecognized option %s.\n' "'$opt'" >&2
+      printf 'Run `%s --help` for usage info.\n' "$self" >&2
+      exit 2;;
+    *) break;;
+  esac
+  shift
+done
+
+# Main log highlighter.
+command -v gawk >/dev/null 2>&1 && awk() { gawk "$@"; }
+main() {
+  awk \
+    -v re_spc=$'[ \t]' \
+    -v vtreset=$'\e[0m' \
+    -v vtred=$'\e[91m' \
+    -v vtgrn=$'\e[92m' \
+    -v vtyel=$'\e[33m' \
+    -v vtblu=$'\e[34m' \
+    -v vtpur=$'\e[35m' \
+    -v vtcya=$'\e[36m' \
+    -v vtwht=$'\e[37m' \
+    -v vtemp=$'\e[38;2;220;230;255m\e[1m' \
+    -v vtbold=$'\e[1m' \
+    -v vtnobold=$'\e[22m' \
+    -v vtdim=$'\e[2m' \
+    -v vtnodim=$'\e[22m' \
+    -v vtitalic=$'\e[3m' \
+    -v vtnoitalic=$'\e[23m' \
+    -v vtunderline=$'\e[4m' \
+    -v vtnounderline=$'\e[24m' \
+    -v vtundercurl=$'\e[4:3m' \
+    -v vtnoundercurl=$'\e[24m' \
+    -v vtundercurlcolor=$'\e[4:3m\e[58:2::240:45:15m' \
+    -v vtnoundercurlcolor=$'\e[59m' \
+    -v vtblink=$'\e[5m' \
+    -v vtnoblink=$'\e[25m' \
+    -v vtinverse=$'\e[7m' \
+    -v vtnoinverse=$'\e[27m' \
+    -v vthidden=$'\e[8m' \
+    -v vtnohidden=$'\e[28m' \
+    -v vtstrikethru=$'\e[9m' \
+    -v vtnostrikethru=$'\e[29m' \
+    -v COLORLOG_HL_STACK_FRAME="$COLORLOG_HL_STACK_FRAME" \
+    -f <(cat <<'EOF'
+function rgbfg(r,g,b) { return "\033[38;2;" r ";" g ";" b "m" }
+function rgbbg(r,g,b) { return "\033[48;2;" r ";" g ";" b "m" }
+BEGIN {
+  re_date_letters="[0-9]{1,2}[ -][A-Za-z]{3},?|[A-Za-z]{3}[ -][0-9]{1,2},?"
+  re_date_numbers="[0-9]{2}[ /-][0-9]{2}"
+  re_date="(([0-9]{2}|[0-9]{4})[ -](" re_date_letters "))"
+  re_date=re_date "|((" re_date_letters ") ?,?[ -]?([0-9]{2}|[0-9]{4}))"
+  re_date=re_date "|([0-9]{4}[ /-]" re_date_numbers ")|(" re_date_numbers "[ /-][0-9]{4})"
+  re_date="(" re_date ")"
+  re_time="([0-9]{1,2}:[0-9]{2}:[0-9]{2}([.,][0-9]*)?[A-Z]?" re_spc "*([Aa][Mm]|[Pp][Mm])?)"
+  re_ts="(" re_date "( *[Tt/-]? *))?" re_time
+  re_ts="(\\[?" re_spc "*\\<" re_ts "\\>" re_spc "*\\]?)"
+
+  re_sev="(TRACE|TRC|DEBUG|DBG|INFO?|WA?RN(ING)?|ERR(OR)?|FTL|FATAL|SVR|SEV(ERE)?)"
+  re_sev="(\\[?" re_spc "*\\<" re_sev "\\>" re_spc "*\\]?)"
+
+  re_brkt_0="\\[[^][]*\\]"
+  re_brkt=re_brkt_0 re_spc "*"
+  for (i = 0; i < 4; i++) {
+    re_brkt_0="\\[[^][]*" re_brkt_0 "[^][]*\\]"
+    re_brkt=re_brkt "|" re_brkt_0 re_spc "*"
+  }
+  re_thrd="(" re_brkt ")"
+  re_class="([A-Za-z0-9_$./\\-]+)"
+
+  sevcolor=vtreset; msgcolor=vtreset;
+}
+{
+  msg=$0
+  havets=0; tsstart=1; tslen=0
+  havesev=0; sevstart=1; sevlen=0
+  havetrace=0
+
+  # Swap severity with thread name.  Makes the rest of the code simpler.
+  if (match(msg, re_thrd re_spc "+")) {
+    thrdstart=RSTART; thrdlen=RLENGTH
+    if (match(substr(msg, thrdstart+thrdlen), re_sev)) {
+      sevstart=thrdstart+thrdlen-1+RSTART; sevlen=RLENGTH
+      msg=substr(msg, 1, thrdstart-1) \
+          substr(msg, sevstart, sevlen) \
+          substr(msg, thrdstart, thrdlen) \
+          substr(msg, sevstart+sevlen)
+    }
+  }
+
+  # Determine how to color base on whether line has timestamp, severity,
+  # and/or stack trace elements.
+  if (match(msg, re_sev)) {
+    havesev=1; sevstart=RSTART; sevlen=RLENGTH
+  }
+  if (match(msg, re_ts)) {
+    havets=1; tsstart=RSTART; tslen=RLENGTH
+  }
+  if (match(msg,  # check for stack trace line
+      "^(" re_spc "*(at )?)(([a-zA-Z0-9_$-]+\\.)*)([a-zA-Z0-9_$-]+\\.)" \
+      "([a-zA-Z0-9_$-]+" re_spc "*)" \
+      "(\\()([^():]*)?(:)?([^()]*)?(\\))(.*)$", arr)) {
+    havetrace=1
+    pkgcolor=vtdim vtred
+    if (match(arr[0], COLORLOG_HL_STACK_FRAME)) pkgcolor=vtnodim vtred
+    line=\
+      vtdim vtred   arr[1] pkgcolor arr[3] \
+      vtyel         arr[5] vtblu    arr[6]  vtwht arr[7]  vtwht arr[8]  \
+      vtwht         arr[9] vtcya    arr[10] vtwht arr[11] \
+      msgcolor      arr[12]
+  }
+  if (!havesev && !havets && !havetrace) {
+    print msg; next
+  }
+
+  # Give different colors to different severities.
+  if (havesev) {
+    sev=substr(msg, sevstart, sevlen)
+    if (sev ~ /\<(TRACE|TRC)\>/) {
+      sevcolor=msgcolor=vtdim "\033[36m";
+    } else if (sev ~ /\<(DEBUG|DBG)\>/) {
+      sevcolor=msgcolor=vtdim "\033[94m";
+    } else if (sev ~ /\<(INFO?)\>/) {
+      sevcolor=vtnodim vtgrn; msgcolor=vtreset
+    } else if (sev ~ /\<(WA?RN(ING)?)\>/) {
+      sevcolor=msgcolor=vtnodim vtyel
+    } else if (sev ~ /\<(ERR(OR)?)\>/) {
+      sevcolor=msgcolor=vtnodim vtred
+    } else if (sev ~ /\<(FTL|FATAL|SVR|SEV(ERE)?)\>/) {
+      sevcolor=msgcolor=vtdim vtred
+    }
+  }
+
+  if (!havesev) {
+    msgcolor=vtreset
+  } else if (sevstart < tsstart) {
+    begcolor=sevcolor; midcolor=vtreset vtdim
+  } else {
+    midcolor=sevcolor; begcolor=vtreset vtdim
+  }
+  if (havets || havesev) {
+    start=1; len=0
+    if (match(msg, re_ts)) { start=RSTART; len=RLENGTH }
+    line=substr(msg, 1, start-1)
+    line=line vtreset vtdim substr(msg, start, len)
+    printf("%s", line msgcolor)
+    line=msg=substr(msg, start+len)
+
+    start=1; len=0
+    if (match(msg, re_sev)) { start=RSTART; len=RLENGTH }
+    line=substr(msg, 1, start-1)
+    line=line sevcolor substr(msg, start, len)
+    printf("%s", line msgcolor)
+    line=msg=substr(msg, start+len)
+
+    thrdcolor=vtdim "\033[34m"
+    start=1; len=0
+    if (match(msg, re_thrd)) { start=RSTART; len=RLENGTH }
+    line=substr(msg, 1, start-1)
+    line=line thrdcolor substr(msg, start, len)
+    printf("%s", line msgcolor)
+    line=msg=substr(msg, start+len)
+
+    classcolor=vtreset vtpur
+    start=1; len=0
+    if (match(msg, re_class)) { start=RSTART; len=RLENGTH }
+    line=substr(msg, 1, start-1)
+    line=line classcolor substr(msg, start, len)
+    printf("%s", line msgcolor)
+    line=msg=substr(msg, start+len)
+  }
+  print line
+}
+EOF
+  )
+}
+
+# Be helpful if stdin is a terminal and no FILE args were given.
+if [ $# -eq 0 ] && [ -t 0 ]; then help >&2; exit 2; fi
+if [ $# -gt 1 ]; then
+  printf 'ERROR: invalid arguments.\n' >&2
+  printf 'Run `%s --help` for usage info.\n' "$self" >&2
+  exit 2
+fi
+
+# Ready to go!
+if [ $# -eq 0 ] || [ "$1" = "-" ]; then main; exit $?; fi
+main < "$1"

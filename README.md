@@ -2,6 +2,7 @@ Miscellaneous command line utilities I find myself using frequently.
 Mostly just convenience wrappers around common Unix utilities.
 
 * `check-logins.sh` - test SSH logins into hosts listed in ~/.ssh/config.
+* `colorlog` - colorize log files.
 * `get-ssl-cert.sh` - get a given server's SSL certificates.
 * `get-zscaler-root-ca.ps1` - get Zscaler Root CA from Windows' trusted
   root store.  No Administrator privileges required.
