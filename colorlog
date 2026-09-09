@@ -30,7 +30,7 @@ EXAMPLES:
 OPTIONS:
 -h, --help
   Show this message and exit.
--s, --hl-stack-frame=REGEX
+-s=REGEX, --hl-stack-frame=REGEX
   For stack traces, highlight stack trace lines matching REGEX.  Overrides
   COLORLOG_HL_STACK_FRAME environment variable.
 -V, --version
