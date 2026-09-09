@@ -163,7 +163,7 @@ BEGIN {
   }
   if (match(msg,  # check for stack trace line
       "^(" re_spc "*(at )?)(([a-zA-Z0-9_$-]+\\.)*)([a-zA-Z0-9_$-]+\\.)" \
-      "([a-zA-Z0-9_$-]+" re_spc "*)" \
+      "([a-zA-Z0-9_<>$-]+" re_spc "*)" \
       "(\\()([^():]*)?(:)?([^()]*)?(\\))(.*)$", arr)) {
     havetrace=1
     pkgcolor=vtdim vtred
