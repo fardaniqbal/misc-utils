@@ -4,7 +4,7 @@
 #
 # Get the latest version at https://github.com/fardaniqbal/misc-utils/.
 set -uo pipefail
-COLORLOG_VERSION="0.0.1"
+COLORLOG_VERSION="0.0.2"
 self="$(basename "$0")"
 
 # Effectively don't match any stack frame by default.
@@ -106,7 +106,8 @@ main() {
     -v vtnohidden=$'\e[28m' \
     -v vtstrikethru=$'\e[9m' \
     -v vtnostrikethru=$'\e[29m' \
-    -v COLORLOG_HL_STACK_FRAME="$COLORLOG_HL_STACK_FRAME" \
+    -v COLORLOG_HL_STACK_FRAME="$( # escape backslashes in this var
+      sed -E 's#\\#\\\\#g' <<<"$COLORLOG_HL_STACK_FRAME")" \
     -f <(cat <<'EOF'
 function rgbfg(r,g,b) { return "\033[38;2;" r ";" g ";" b "m" }
 function rgbbg(r,g,b) { return "\033[48;2;" r ";" g ";" b "m" }
