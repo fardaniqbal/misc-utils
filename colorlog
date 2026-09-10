@@ -4,7 +4,7 @@
 #
 # Get the latest version at https://github.com/fardaniqbal/misc-utils/.
 set -uo pipefail
-COLORLOG_VERSION="0.0.2"
+COLORLOG_VERSION="0.1.1"
 self="$(basename "$0")"
 
 # Effectively don't match any stack frame by default.
@@ -78,36 +78,27 @@ main() {
   awk \
     -v re_spc=$'[ \t]' \
     -v vtreset=$'\e[0m' \
-    -v vtred=$'\e[91m' \
-    -v vtgrn=$'\e[92m' \
-    -v vtyel=$'\e[33m' \
-    -v vtblu=$'\e[34m' \
-    -v vtpur=$'\e[35m' \
-    -v vtcya=$'\e[36m' \
-    -v vtwht=$'\e[37m' \
-    -v vtemp=$'\e[38;2;220;230;255m\e[1m' \
-    -v vtbold=$'\e[1m' \
-    -v vtnobold=$'\e[22m' \
-    -v vtdim=$'\e[2m' \
-    -v vtnodim=$'\e[22m' \
-    -v vtitalic=$'\e[3m' \
-    -v vtnoitalic=$'\e[23m' \
-    -v vtunderline=$'\e[4m' \
-    -v vtnounderline=$'\e[24m' \
-    -v vtundercurl=$'\e[4:3m' \
-    -v vtnoundercurl=$'\e[24m' \
-    -v vtundercurlcolor=$'\e[4:3m\e[58:2::240:45:15m' \
+    -v vtred=$'\e[31m' -v vtredbr=$'\e[91m' \
+    -v vtgrn=$'\e[32m' -v vtgrnbr=$'\e[92m' \
+    -v vtyel=$'\e[33m' -v vtyelbr=$'\e[93m' \
+    -v vtblu=$'\e[34m' -v vtblubr=$'\e[94m' \
+    -v vtpur=$'\e[35m' -v vtpurbr=$'\e[95m' \
+    -v vtcya=$'\e[36m' -v vtcyabr=$'\e[96m' \
+    -v vtwht=$'\e[37m' -v vtwhtbr=$'\e[97m' \
+    -v vtemp=$'\e[38;2;220;230;255m\e[1m'   \
+    -v vtbold=$'\e[1m'        -v vtnobold=$'\e[22m'         \
+    -v vtdim=$'\e[2m'         -v vtnodim=$'\e[22m'          \
+    -v vtitalic=$'\e[3m'      -v vtnoitalic=$'\e[23m'       \
+    -v vtunderline=$'\e[4m'   -v vtnounderline=$'\e[24m'    \
+    -v vtundercurl=$'\e[4:3m' -v vtnoundercurl=$'\e[24m'    \
+    -v vtundercurlcolor=$'\e[4:3m\e[58:2::240:45:15m'       \
     -v vtnoundercurlcolor=$'\e[59m' \
-    -v vtblink=$'\e[5m' \
-    -v vtnoblink=$'\e[25m' \
-    -v vtinverse=$'\e[7m' \
-    -v vtnoinverse=$'\e[27m' \
-    -v vthidden=$'\e[8m' \
-    -v vtnohidden=$'\e[28m' \
-    -v vtstrikethru=$'\e[9m' \
-    -v vtnostrikethru=$'\e[29m' \
+    -v vtblink=$'\e[5m'       -v vtnoblink=$'\e[25m'        \
+    -v vtinverse=$'\e[7m'     -v vtnoinverse=$'\e[27m'      \
+    -v vthidden=$'\e[8m'      -v vtnohidden=$'\e[28m'       \
+    -v vtstrikethru=$'\e[9m'  -v vtnostrikethru=$'\e[29m'   \
     -v COLORLOG_HL_STACK_FRAME="$( # escape backslashes in this var
-      sed -E 's#\\#\\\\#g' <<<"$COLORLOG_HL_STACK_FRAME")" \
+      sed -E 's#\\#\\\\#g' <<<"$COLORLOG_HL_STACK_FRAME")"  \
     -f <(cat <<'EOF'
 function rgbfg(r,g,b) { return "\033[38;2;" r ";" g ";" b "m" }
 function rgbbg(r,g,b) { return "\033[48;2;" r ";" g ";" b "m" }
@@ -118,12 +109,14 @@ BEGIN {
   re_date=re_date "|((" re_date_letters ") ?,?[ -]?([0-9]{2}|[0-9]{4}))"
   re_date=re_date "|([0-9]{4}[ /-]" re_date_numbers ")|(" re_date_numbers "[ /-][0-9]{4})"
   re_date="(" re_date ")"
-  re_time="([0-9]{1,2}:[0-9]{2}:[0-9]{2}([.,][0-9]*)?[A-Z]?" re_spc "*([Aa][Mm]|[Pp][Mm])?)"
-  re_ts="(" re_date "( *[Tt/-]? *))?" re_time
+  re_time="[0-9]{1,2}:[0-9]{2}:[0-9]{2}([.,][0-9]*)?[A-Z]?"
+  re_time=re_time re_spc "*([Aa][Mm]|[Pp][Mm]|([+-][0-9]{2}(:?[0-9]{2})?))?"
+  re_ts="(" re_date "( *[Tt/-]? *))?(" re_time ")"
   re_ts="(\\[?" re_spc "*\\<" re_ts "\\>" re_spc "*\\]?)"
 
-  re_sev="(TRACE|TRC|DEBUG|DBG|INFO?|WA?RN(ING)?|ERR(OR)?|FTL|FATAL|SVR|SEV(ERE)?)"
-  re_sev="(\\[?" re_spc "*\\<" re_sev "\\>" re_spc "*\\]?)"
+  re_sev="(\\<(TRACE|DEBUG|INFO|WARN(ING)?|ERROR|FATAL|SEVERE)\\>)"
+  re_sev="(\\[?" re_spc "*" re_sev re_spc "*\\]?)"
+  re_sev="(" re_sev "|\\[(TRC|DBG|INF|WRN|ERR|FTL|SVR|SEV)\\])"
 
   re_brkt_0="\\[[^][]*\\]"
   re_brkt=re_brkt_0 re_spc "*"
@@ -132,110 +125,106 @@ BEGIN {
     re_brkt=re_brkt "|" re_brkt_0 re_spc "*"
   }
   re_thrd="(" re_brkt ")"
-  re_class="([A-Za-z0-9_$./\\-]+)"
+  re_class="([A-Za-z0-9_$./\\\\]+)"
+  re_num="(\\<([0-9]+(\\.[0-9]*)*([EePp][+-]?[0-9]+)?|0[Xx][0-9A-Fa-f]+|0[Bb][01]+)\\>)"
+  re_punc="[][|&^~!=<>(){}?:;*/%.,\\\\+-]"
 
-  sevcolor=vtreset; msgcolor=vtreset;
+  sevcolor=vtwhtbr vtnodim; msgcolor=vtwhtbr vtnodim;
 }
-{
-  msg=$0
-  havets=0; tsstart=1; tslen=0
-  havesev=0; sevstart=1; sevlen=0
-  havetrace=0
 
-  # Swap severity with thread name.  Makes the rest of the code simpler.
-  if (match(msg, re_thrd re_spc "+")) {
-    thrdstart=RSTART; thrdlen=RLENGTH
-    if (match(substr(msg, thrdstart+thrdlen), re_sev)) {
-      sevstart=thrdstart+thrdlen-1+RSTART; sevlen=RLENGTH
-      msg=substr(msg, 1, thrdstart-1) \
-          substr(msg, sevstart, sevlen) \
-          substr(msg, thrdstart, thrdlen) \
-          substr(msg, sevstart+sevlen)
+# Match REGEX against STR, skipping any substrings previously matched on
+# the current record (as tracked by `starts` and `lens` global arrays.)  If
+# match is found, insert the match's start pos, length, and given COLOR
+# into `starts`, `lens`, and `colors`, respectively.
+# Return start pos of match if found, or 0 if not found.
+function hlmatch(str, regex, color,     start, len, i, j, p0, p1) {
+  for (i=1; i<=hlcount; i++) {
+    p0=starts[i]+lens[i]
+    if (i+1 <= hlcount) { p1=starts[i+1] }
+    else                { p1=length(msg)+1 }
+    if (match(substr(msg, p0, p1-p0), regex)) {
+      # Insert new start/len/color into arrays sorted by start index.
+      start=RSTART+p0-1; len=RLENGTH
+      hlcount++
+      for (; i<hlcount; i++) {
+        if (starts[i] > start) {
+          for (j=hlcount; j>i; j--) {
+            starts[j]=starts[j-1]
+            lens[j]=lens[j-1]
+            colors[j]=colors[j-1]
+          }
+          break
+        }
+      }
+      starts[i]=start
+      lens[i]=len
+      colors[i]=color
+      return start
     }
   }
+  return 0
+}
+
+{
+  starts[1]=1; lens[1]=0; colors[1]=msgcolor
+  hlcount=1
+  msg=$0
 
   # Determine how to color base on whether line has timestamp, severity,
   # and/or stack trace elements.
-  if (match(msg, re_sev)) {
+  if (match(toupper(msg), re_sev)) {
     havesev=1; sevstart=RSTART; sevlen=RLENGTH
-  }
-  if (match(msg, re_ts)) {
-    havets=1; tsstart=RSTART; tslen=RLENGTH
-  }
-  if (match(msg,  # check for stack trace line
-      "^(" re_spc "*(at )?)(([a-zA-Z0-9_$-]+\\.)*)([a-zA-Z0-9_$-]+\\.)" \
-      "([a-zA-Z0-9_<>$-]+" re_spc "*)" \
-      "(\\()([^():]*)?(:)?([^()]*)?(\\))(.*)$", arr)) {
-    havetrace=1
-    pkgcolor=vtdim vtred
-    if (match(arr[0], COLORLOG_HL_STACK_FRAME)) pkgcolor=vtnodim vtred
-    line=\
-      vtdim vtred   arr[1] pkgcolor arr[3] \
-      vtyel         arr[5] vtblu    arr[6]  vtwht arr[7]  vtwht arr[8]  \
-      vtwht         arr[9] vtcya    arr[10] vtwht arr[11] \
-      msgcolor      arr[12]
-  }
-  if (!havesev && !havets && !havetrace) {
-    print msg; next
   }
 
   # Give different colors to different severities.
   if (havesev) {
-    sev=substr(msg, sevstart, sevlen)
-    if (sev ~ /\<(TRACE|TRC)\>/) {
-      sevcolor=msgcolor=vtdim "\033[36m";
-    } else if (sev ~ /\<(DEBUG|DBG)\>/) {
-      sevcolor=msgcolor=vtdim "\033[94m";
-    } else if (sev ~ /\<(INFO?)\>/) {
-      sevcolor=vtnodim vtgrn; msgcolor=vtreset
-    } else if (sev ~ /\<(WA?RN(ING)?)\>/) {
+    sev=toupper(substr(msg, sevstart, sevlen))
+    if (sev ~ /\<TRACE\>/ || sev ~ /\[TRC\]/) {
+      sevcolor=msgcolor=vtdim vtcya;
+    } else if (sev ~ /\<DEBUG\>/ || sev ~ /\[DBG\]/) {
+      sevcolor=msgcolor=vtdim vtblubr;
+    } else if (sev ~ /\<INFO\>/ || sev ~ /\[INF\]/) {
+      sevcolor=vtnodim vtgrnbr; msgcolor=vtwhtbr vtnodim
+    } else if (sev ~ /\<WARN(ING)?\>/ || sev ~ /\[WRN\]/) {
       sevcolor=msgcolor=vtnodim vtyel
-    } else if (sev ~ /\<(ERR(OR)?)\>/) {
-      sevcolor=msgcolor=vtnodim vtred
-    } else if (sev ~ /\<(FTL|FATAL|SVR|SEV(ERE)?)\>/) {
-      sevcolor=msgcolor=vtdim vtred
+    } else if (sev ~ /\<ERROR\>/ || sev ~ /\[ERR\]/) {
+      sevcolor=msgcolor=vtnodim vtredbr
+    } else if (sev ~ /\<(FATAL|SEVERE)\>/ || sev ~ /\[(FTL|SVR|SEV)\]/) {
+      sevcolor=msgcolor=vtdim vtredbr
     }
   }
 
-  if (!havesev) {
-    msgcolor=vtreset
-  } else if (sevstart < tsstart) {
-    begcolor=sevcolor; midcolor=vtreset vtdim
-  } else {
-    midcolor=sevcolor; begcolor=vtreset vtdim
+  # Highlight stack traces.
+  if (match(msg,
+      "^(" re_spc "*(at )?)(([a-zA-Z0-9_$]+\\.)*)([a-zA-Z0-9_$]+\\.)" \
+      "([a-zA-Z0-9_<>$]+" re_spc "*)" \
+      "(\\()([^():]*)?(:)?([^()]*)?(\\))(.*)$", arr)) {
+    pkgcolor=vtdim vtredbr
+    if (match(arr[0], COLORLOG_HL_STACK_FRAME)) pkgcolor=vtnodim
+    print \
+      vtdim vtredbr arr[1] pkgcolor arr[3] \
+      vtyel         arr[5] vtblu    arr[6]  vtwht arr[7]  vtwht arr[8]  \
+      vtwht         arr[9] vtcya    arr[10] vtwht arr[11] \
+      msgcolor      arr[12]
+    next
   }
-  if (havets || havesev) {
-    start=1; len=0
-    if (match(msg, re_ts)) { start=RSTART; len=RLENGTH }
-    line=substr(msg, 1, start-1)
-    line=line vtreset vtdim substr(msg, start, len)
-    printf("%s", line msgcolor)
-    line=msg=substr(msg, start+len)
 
-    start=1; len=0
-    if (match(msg, re_sev)) { start=RSTART; len=RLENGTH }
-    line=substr(msg, 1, start-1)
-    line=line sevcolor substr(msg, start, len)
-    printf("%s", line msgcolor)
-    line=msg=substr(msg, start+len)
+  hlmatch(msg, re_ts, vtwht vtdim)
+  if (havesev) hlmatch(toupper(msg), re_sev, sevcolor)
+  hlmatch(msg, re_thrd, vtdim vtblu)
+  hlmatch(msg, re_class, vtpur)
+  while (hlmatch(msg, re_num, vtred)) continue
+  while (hlmatch(msg, re_punc, vtcyabr)) continue
+  while (hlmatch(msg, re_thrd, vtdim vtblu)) continue
 
-    thrdcolor=vtdim "\033[34m"
-    start=1; len=0
-    if (match(msg, re_thrd)) { start=RSTART; len=RLENGTH }
-    line=substr(msg, 1, start-1)
-    line=line thrdcolor substr(msg, start, len)
-    printf("%s", line msgcolor)
-    line=msg=substr(msg, start+len)
-
-    classcolor=vtreset vtpur
-    start=1; len=0
-    if (match(msg, re_class)) { start=RSTART; len=RLENGTH }
-    line=substr(msg, 1, start-1)
-    line=line classcolor substr(msg, start, len)
-    printf("%s", line msgcolor)
-    line=msg=substr(msg, start+len)
+  for (i=1; i<=hlcount; i++) {
+    p0=starts[i]; p1=starts[i]+lens[i]
+    if (i+1 <= hlcount) { p2=starts[i+1] }
+    else                { p2=length(msg)+1 }
+    printf("%s", colors[i] substr(msg, p0, p1-p0))
+    printf("%s", msgcolor substr(msg, p1, p2-p1))
   }
-  print line
+  printf("\n")
 }
 EOF
   )
